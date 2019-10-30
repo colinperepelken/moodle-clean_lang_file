@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Cleans a Moodle plugin language file of unused language strings.
+
+Given the absolute path to the Moodle plugin, this script will find all files within the plugin directory
+of types .js, .php, and .mustache. If a file of that type contains the language string identifier, the 
+language string will remain. Otherwise it will be removed.
+
+Any comments or non-language strings will be removed.
+
+"""
+
+import argparse
+import re
+import os.path
+import sys
+
+__author__ = "Colin Bernard"
+__copyright__ = "Copyright (C) Lingel Learning Pty Ltd - All Rights Reserved"
+__credits__ = ["Colin Bernard"]
+
+__license__ = "GPL"
+__version__ ="1.0"
+__maintainer__ = "Colin Bernard"
+__email__ = "colin@lingellearning.com"
+__status__ = "Development"
+
+log_file = None
+
+# These are the file types within the plugin that will be searched for refs to the lang strings.
+search_file_types = ['.js', '.php', '.mustache'] 
+
+def main():
+    global log_file
+
+    parser = argparse.ArgumentParser(description='Remove unused strings from a Moodle plugin language file.')
+    parser.add_argument('plugin', type=str, help='The absolute path to the Moodle plugin you want to clean up language strings for.')
+    parser.add_argument('--log', help='Should a log file be created? Or should we ouput the results to the console?', action="store_true")
+    parser.add_argument('--safe', help='Should a new language file be created, instead of editing the existing one?', action="store_true")
+    parser.add_argument('-l', '--lang', help="What language should we clean? Default is 'en'.", type=str, default='en')
+
+    args = parser.parse_args()
+    plugin_path = args.plugin
+
+    if (args.log):
+        log_file = open(plugin_path + "/lang/" + args.lang + "/log.txt", "w")
+
+    safe_mode = False
+    if (args.safe):
+        safe_mode = True
+        print("Running in safe mode.")
+
+    # If the user added an extra "/" at the ends, remove it.
+    if (plugin_path[-1] == '/'):
+        plugin_path = plugin_path[:-1]
+
+    # Find the path to the English lang file.
+    lang_file_path = plugin_path + "/lang/" + args.lang + "/" + plugin_path.rsplit('/', 1)[-1] + ".php"
+
+    # Check if the language file exists.
+    if (os.path.exists(lang_file_path)):
+        print('Found language file: {}'.format(lang_file_path))
+    else:
+        sys.exit('Error! Can\'t find language file: {}'.format(lang_file_path))
+
+    # Open the language file.
+    file_mode = "r"
+    if (safe_mode == False):
+        file_mode = "r+"
+
+    with open(lang_file_path, file_mode) as lang_file:
+        matches = re.findall(r"(\$string\[['|\"](.*)['|\"]\]\s*=\s*'[^;]*';)", lang_file.read())
+        print('Found {} strings in the language file.'.format(len(matches[1])))
+
+        if (safe_mode):
+            safe_lang_file = open(lang_file_path.replace(lang_file_path.rsplit('/', 1)[-1], plugin_path.rsplit('/', 1)[-1] + "_clean.php"), "w+")
+            safe_lang_file.write("<?php\n")
+        else:
+            # Delete lang file contents.
+            lang_file.truncate(0)
+            lang_file.write("<?php\n")
+
+        removed_count = 0
+        
+        # Iterate through each lang string identifier.
+        for match in matches:
+            file_path = is_string_used(match[1], plugin_path, lang_file_path)
+            if (file_path != False):
+                log('Identifier \'{}\' found in file \'{}\'.'.format(match[1], file_path))
+
+                if (safe_mode):
+                    safe_lang_file.write(match[0] + "\n")
+                else:
+                    lang_file.write(match[0] + "\n")
+
+                continue
+            else:
+                log('Removing language string \'{}\''.format(match[1]))
+                removed_count += 1
+
+    print('Done! Removed {} lang strings. There are {} lang strings remaining.'.format(removed_count, len(matches) - removed_count))
+    
+    if (log_file is not None):
+        print('Log file created: ' + os.path.realpath(log_file.name))
+        log_file.close()
+
+    if (safe_mode and safe_lang_file is not None):
+        print('New language file created: ' + os.path.realpath(safe_lang_file.name))
+        safe_lang_file.close()
+
+# Search all other plugin files for references to this language string.
+def is_string_used(identifier, plugin_path, lang_file):
+    for root, dirs, files in os.walk(plugin_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if (should_search_file(file_path)):
+                with open(file_path, 'r') as f:
+                    if identifier in f.read():
+                        return file_path
+    return False
+
+# Should this file be searched for references to language strings.
+def should_search_file(file_path):
+    if ("/lang/" in file_path):
+        return False
+    for file_type in search_file_types:
+        if (file_path.endswith(file_type)):
+            return True
+    return False
+
+# Log a message either by printing it or writing it to the log file.
+def log(message):
+    global log_file
+
+    if (log_file is not None):
+        log_file.write(message + "\n")
+    else:
+        print(message)
+
+if __name__ == "__main__":
+    main()
