@@ -19,7 +19,7 @@ __copyright__ = "Copyright (C) Lingel Learning Pty Ltd - All Rights Reserved"
 __credits__ = ["Colin Bernard"]
 
 __license__ = "GPL"
-__version__ ="1.0"
+__version__ ="1.0.1"
 __maintainer__ = "Colin Bernard"
 __email__ = "colin@lingellearning.com"
 __status__ = "Development"
@@ -78,6 +78,7 @@ def main():
             else:
                 # Delete lang file contents.
                 lang_file.truncate(0)
+                lang_file.seek(0, 0)
                 lang_file.write("<?php\n")
 
             removed_count = 0

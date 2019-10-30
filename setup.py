@@ -7,5 +7,5 @@ setup(
     author_email='colin@lingellearning.com',
     scripts=['src/clean_lang_file'],
     packages=['src'],
-    version='1.0.0'
+    version='1.0.1'
 )
