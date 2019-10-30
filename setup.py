@@ -1,7 +1,11 @@
 from setuptools import setup
 
 setup(
-    scripts = [
-        'scripts/clean_lang_file'
-    ]
+    name='clean_lang_file',
+    description='Clean Moodle language files',
+    author='Colin Bernard',
+    author_email='colin@lingellearning.com',
+    scripts=['src/clean_lang_file'],
+    packages=['src'],
+    version='1.0.0'
 )

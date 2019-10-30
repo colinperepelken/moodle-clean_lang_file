@@ -62,50 +62,53 @@ def main():
     else:
         sys.exit('Error! Can\'t find language file: {}'.format(lang_file_path))
 
-    # Open the language file.
     file_mode = "r"
     if (safe_mode == False):
         file_mode = "r+"
 
-    with open(lang_file_path, file_mode) as lang_file:
-        matches = re.findall(r"(\$string\[['|\"](.*)['|\"]\]\s*=\s*'[^;]*';)", lang_file.read())
-        print('Found {} strings in the language file.'.format(len(matches[1])))
+    # Open the language file.
+    try:
+        with open(lang_file_path, file_mode) as lang_file:
+            matches = re.findall(r"(\$string\[['|\"](.*)['|\"]\]\s*=\s*'[^;]*';)", lang_file.read())
+            print('Found {} strings in the language file.'.format(len(matches[1])))
 
-        if (safe_mode):
-            safe_lang_file = open(lang_file_path.replace(lang_file_path.rsplit('/', 1)[-1], plugin_path.rsplit('/', 1)[-1] + "_clean.php"), "w+")
-            safe_lang_file.write("<?php\n")
-        else:
-            # Delete lang file contents.
-            lang_file.truncate(0)
-            lang_file.write("<?php\n")
-
-        removed_count = 0
-        
-        # Iterate through each lang string identifier.
-        for match in matches:
-            file_path = is_string_used(match[1], plugin_path, lang_file_path)
-            if (file_path != False):
-                log('Identifier \'{}\' found in file \'{}\'.'.format(match[1], file_path))
-
-                if (safe_mode):
-                    safe_lang_file.write(match[0] + "\n")
-                else:
-                    lang_file.write(match[0] + "\n")
-
-                continue
+            if (safe_mode):
+                safe_lang_file = open(lang_file_path.replace(lang_file_path.rsplit('/', 1)[-1], plugin_path.rsplit('/', 1)[-1] + "_clean.php"), "w+")
+                safe_lang_file.write("<?php\n")
             else:
-                log('Removing language string \'{}\''.format(match[1]))
-                removed_count += 1
+                # Delete lang file contents.
+                lang_file.truncate(0)
+                lang_file.write("<?php\n")
 
-    print('Done! Removed {} lang strings. There are {} lang strings remaining.'.format(removed_count, len(matches) - removed_count))
-    
-    if (log_file is not None):
-        print('Log file created: ' + os.path.realpath(log_file.name))
-        log_file.close()
+            removed_count = 0
+            
+            # Iterate through each lang string identifier.
+            for match in matches:
+                file_path = is_string_used(match[1], plugin_path, lang_file_path)
+                if (file_path != False):
+                    log('Identifier \'{}\' found in file \'{}\'.'.format(match[1], file_path))
 
-    if (safe_mode and safe_lang_file is not None):
-        print('New language file created: ' + os.path.realpath(safe_lang_file.name))
-        safe_lang_file.close()
+                    if (safe_mode):
+                        safe_lang_file.write(match[0] + "\n")
+                    else:
+                        lang_file.write(match[0] + "\n")
+
+                    continue
+                else:
+                    log('Removing language string \'{}\''.format(match[1]))
+                    removed_count += 1
+
+        print('Done! Removed {} lang strings. There are {} lang strings remaining.'.format(removed_count, len(matches) - removed_count))
+        
+        if (log_file is not None):
+            print('Log file created: ' + os.path.realpath(log_file.name))
+            log_file.close()
+
+        if (safe_mode and safe_lang_file is not None):
+            print('New language file created: ' + os.path.realpath(safe_lang_file.name))
+            safe_lang_file.close()
+    except:
+        print("Error opening language file: {}".format(lang_file_path))
 
 # Search all other plugin files for references to this language string.
 def is_string_used(identifier, plugin_path, lang_file):
