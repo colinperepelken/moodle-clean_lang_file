@@ -19,7 +19,7 @@ __copyright__ = "Copyright (C) Lingel Learning Pty Ltd - All Rights Reserved"
 __credits__ = ["Colin Bernard"]
 
 __license__ = "GPL"
-__version__ ="1.0.1"
+__version__ ="1.0.2"
 __maintainer__ = "Colin Bernard"
 __email__ = "colin@lingellearning.com"
 __status__ = "Development"
@@ -86,6 +86,12 @@ def main():
             # Iterate through each lang string identifier.
             for match in matches:
                 file_path = is_string_used(match[1], plugin_path, lang_file_path)
+
+                # Special case for strings containing '_help'.
+                # Try search for the string without '_help' as well.
+                if (not file_path and "_help" in match[1]):
+                    file_path = is_string_used(match[1].replace("_help", ""), plugin_path, lang_file_path)
+
                 if (file_path != False):
                     log('Identifier \'{}\' found in file \'{}\'.'.format(match[1], file_path))
 
