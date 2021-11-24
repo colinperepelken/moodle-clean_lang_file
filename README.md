@@ -10,7 +10,7 @@ Any comments or non-language strings will be removed.
 ## Installation  
 Replace *YOUR_USERNAME* with your Bitbucket username.  
 ```
-pip3 install git+https://YOUR_USERNAME@bitbucket.org/lingeldevau/clean_lang_file.git
+pip3 install git+https://YOUR_USERNAME@github.com/colinperepelken/moodle-clean_lang_file.git
 ```
 
 ## Usage  
